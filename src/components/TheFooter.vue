@@ -1,5 +1,5 @@
 <template>
-  <footer class="footer">&copy; 2024 yorocovich</footer>
+  <footer class="footer">&copy; yorocovich</footer>
 </template>
 
 <style scoped>

@@ -1,81 +1,54 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useTodoList } from '@/composables/useTodoList'
 
-const todo = ref('')
-const todoList = ref<{ id: number; task: string }[]>([])
-const ls = localStorage.todoList
+const { todoList, add, edit, check } = useTodoList()
 
-todoList.value = ls ? JSON.parse(ls) : []
+const todo = ref<string | undefined>()
 
 const addTodo = () => {
-  const id = new Date().getTime()
-  todoList.value.push({ id: id, task: todo.value })
-  localStorage.todoList = JSON.stringify(todoList.value)
+  if (!todo.value) return
+  add(todo.value)
   todo.value = ''
 }
 
-const isEdit = ref(false)
-let editId = -1
-const showTodo = (id: number) => {
-  const findTodo = todoList.value.find((todo) => todo.id === id)
-  if (findTodo) {
-    todo.value = findTodo.task
-    isEdit.value = true
-    editId = id
-  }
+const editTodo = (_id: number) => {
+  edit(_id)
 }
 
-const editTodo = () => {
-  const findTodo = todoList.value.find((todo) => todo.id === editId)
-  const idx = todoList.value.findIndex((todo) => todo.id === editId)
-  // taskを編集後のTODOで置き換え
-  if (findTodo) {
-    findTodo.task = todo.value
-    // splice関数でインデックスを元の対象オブジェクトに置き換え
-    todoList.value.splice(idx, 1, findTodo)
-    // localStorageに保存
-    localStorage.todoList = JSON.stringify(todoList.value)
-
-    // 初期値に戻す
-    isEdit.value = false
-    editId = -1
-    todo.value = ''
-  }
-}
-
-const deleteTodo = (id: number) => {
-  isEdit.value = false
-  editId = -1
-  todo.value = ''
-  alert(id)
-  const findTodo = todoList.value.find((todo) => todo.id === id)
-  const idx = todoList.value.findIndex((todo) => todo.id === id)
-
-  if (findTodo) {
-    const delMsg = '「' + findTodo.task + '」を削除しますか？'
-    if (!confirm(delMsg)) return
-
-    todoList.value.splice(idx, 1)
-    localStorage.todoList = JSON.stringify(todoList.value)
-  }
+const changeCheck = (_id: number) => {
+  check(_id)
 }
 </script>
 
 <template>
   <div>
-    <input type="text" class="todo_input" v-model="todo" placeholder="＋ TODOを入力" />
-    <button class="btn green" @click="editTodo" v-if="isEdit">変更</button>
-    <button class="btn" @click="addTodo" v-else>追加</button>
+    <input
+      type="text"
+      class="todo_input"
+      v-model="todo"
+      @keyup.enter="addTodo"
+      placeholder="TODOを入力"
+    />
   </div>
   <div class="box_list">
     <div class="todo_list" v-for="todo in todoList" :key="todo.id">
-      <div class="todo">
-        <input type="checkbox" class="check" />
-        <lavel>{{ todo.task }}</lavel>
-      </div>
-      <div class="btns">
-        <button class="btn green" @click="showTodo(todo.id)">編</button>
-        <button class="btn pink" @click="deleteTodo(todo.id)">削</button>
+      <div class="todo" :class="{ fin: todo.checked }">
+        <input
+          type="checkbox"
+          class="check"
+          @change="changeCheck(todo.id)"
+          :checked="todo.checked"
+        />
+        <input
+          v-show="!todo.checked"
+          type="text"
+          class="task"
+          @keyup.enter="editTodo(todo.id)"
+          @blur="editTodo(todo.id)"
+          v-model="todo.task"
+        />
+        <label v-show="todo.checked">{{ todo.task }}</label>
       </div>
     </div>
   </div>
@@ -91,39 +64,22 @@ const deleteTodo = (id: number) => {
   border-radius: 6px;
 }
 
-.btn {
-  position: relative;
-  padding: 6px 8px;
-  font-size: 14px;
-  color: #fff;
-  text-align: center;
-  background-color: #03a9f4;
-  border: 1px solid #eee;
-  border-radius: 6px;
-}
-
-.btn:active {
-  top: 1px;
-}
-
 .box_list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 20px;
+  gap: 2px;
+  margin-top: 4px;
 }
 
 .todo_list {
   display: flex;
-  gap: 8px;
+  gap: 5px;
   align-items: center;
 }
 
 .todo {
-  width: 250px;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  width: 300px;
+  padding: 4px 1px;
 }
 
 .check {
@@ -131,16 +87,16 @@ const deleteTodo = (id: number) => {
   transform: scale(1.6);
 }
 
-.btns {
-  display: flex;
-  gap: 4px;
+.task {
+  width: 120px;
+  font-size: 15px;
+  border: 0px;
 }
 
-.green {
-  background-color: #00c853;
-}
-
-.pink {
-  background-color: #ff4081;
+.fin {
+  font-size: 15px;
+  color: #777;
+  text-decoration: line-through;
+  background-color: #ddd;
 }
 </style>
